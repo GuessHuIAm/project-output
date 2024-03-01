@@ -1,0 +1,27 @@
+stop_id,stop_name,x,y
+58343,SEC,175,900
+5036,1 Western Ave,350,900
+58381,784 Memorial Drive,575,800
+63189,Barry's Corner (Northbound),200,800
+63190,Barry's Corner (Southbound),150,800
+5039,Stadium (Northbound),200,700
+23930,Stadium (Southbound),150,700
+5049,Quad,225,200
+132600,Cambridge Common,275,300
+5050,Mass and Garden,225,425
+5041,Harvard Square (Northbound),300,500
+58344,Harvard Square (Southbound),250,500
+5040,Kennedy School (Northbound),300,600
+5054,Kennedy School (Southbound),250,600
+5042,Law School (WCC),300,250
+5043,Maxwell Dworkin,425,250
+5044,Memorial Hall,500,300
+154627,Sever Gate,500,375
+5045,Lamont Library,500,425
+23509,Radcliffe Yard,225,350
+6248,Science Center,425,300
+5047,The Inn,500,575
+5048,Widener Gate,350,475
+6854,Leverett House,425,650
+5046,Mather House,500,650
+5051,Winthrop House,425,575

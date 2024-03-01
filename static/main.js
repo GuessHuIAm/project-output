@@ -33,12 +33,15 @@ async function fetchData(path) {
 
 function csvJSON(csv) {
     var lines = csv.split("\n");
+    lines[0] = lines[0].replace("\r", "");
     var result = [];
     var headers = lines[0].split(",");
 
     for (var i = 1; i < lines.length; i++) {
         var obj = {};
         var currentline = lines[i].split(",");
+
+        console.log(currentline);
 
         for (var j = 0; j < headers.length; j++) {
             obj[headers[j]] = currentline[j];
@@ -109,20 +112,20 @@ async function draw_buses() {
         active_trip_ids.add(bus.vehicle.trip.trip_id);
         push();
         fill("#" + routes[tripsMap.get(bus.vehicle.trip.trip_id).route_id][1]);
-        ellipse(x, y, 20);
+        // ellipse(x, y, 20);
         pop();
     })
 
 }
 
 async function prepareData() {
-    const stopsData = await getFileAsObject('./data/stops.txt');
+    const stopsData = await getFileAsObject('./data/stop_positions.csv');
     const stops = JSON.parse(stopsData);
+    stops.forEach(stop => {
+        stop.x = parseFloat(stop.x);
+        stop.y = parseFloat(stop.y);
+    });
     const stopsMap = new Map();
-
-    // stops.forEach(stops => {
-        
-    // })
 
     const shapesData = await getFileAsObject('./data/shapes.txt');
     const shapes = JSON.parse(shapesData);
@@ -147,15 +150,6 @@ async function prepareData() {
         }
     });
 
-    console.log(stopTimesMap);
-
-    stops.forEach(stop => {
-        if (stop.stop_lat < minLat) minLat = stop.stop_lat;
-        if (stop.stop_lat > maxLat) maxLat = stop.stop_lat;
-        if (stop.stop_lon < minLon) minLon = stop.stop_lon;
-        if (stop.stop_lon > maxLon) maxLon = stop.stop_lon;
-    });
-
     shapes.forEach(shape => {
         if (shape.shape_pt_lat < minLat) minLat = shape.shape_pt_lat;
         if (shape.shape_pt_lat > maxLat) maxLat = shape.shape_pt_lat;
@@ -167,17 +161,15 @@ async function prepareData() {
 }
 
 async function draw_routes() {
-
     // Plot each stop
     stops.forEach(stop => {
-        const {x, y} = mapCoord(stop.stop_lat, stop.stop_lon);
         push();
-        ellipse(x, y, 10);
+        ellipse(stop.x, stop.y, 10);
         textSize(8); 
         fill(0);
         noStroke();
         textAlign(CENTER, CENTER);
-        text(stop.stop_name, x, y + 20);
+        text(stop.stop_name, stop.x, stop.y + 20);
         pop();
     });
 
@@ -185,11 +177,9 @@ async function draw_routes() {
         beginShape();
         noFill();
         const stopInfos = stopTimesMap.get(trip_id).stopInfo;
-
         stopInfos.forEach(stopInfo => {
             const stop = stops.find(stop => stop.stop_id == stopInfo.stop_id);
-            const {x, y} = mapCoord(stop.stop_lat, stop.stop_lon);
-            vertex(x, y);
+            vertex(stop.x, stop.y);
         });
         endShape();
     });
