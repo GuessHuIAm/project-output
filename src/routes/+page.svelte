@@ -1,2 +1,10 @@
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
+<svelte:head>
+	<script src="./main.js"></script>
+</svelte:head>
+
+<h1>Project Output</h1>
+
+<div id="sketch-holder" class="container">
+    <!-- This is gonna be the container for the canvas -->
+
+</div>
