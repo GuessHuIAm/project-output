@@ -245,6 +245,13 @@
             .style("font-weight", "bold")
             .text("Active Routes");
 
+        d3.xml("subway.svg")
+            .then(data => {
+                svg.node().append(data.documentElement)
+        });
+
+        
+
         active_trip_ids.forEach(trip_id => {
             const shapeId = tripsMap.get(trip_id).shape_id;
             const routeData = routes[active_shape_to_route.get(shapeId)];
@@ -266,7 +273,9 @@
                 .text(routeName);
 
             y += 30;
+
         });
+
 
     }
 </script>
