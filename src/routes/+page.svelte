@@ -228,6 +228,7 @@
         let yScale = d3.scaleLinear().domain([0, 10]);
 		xScale.range([0, width]);
 		yScale.range([height, 0]);
+        
         // create svg and create a group inside that is moved by means of margin
 		const svg = d3.select(el)
 			.append('svg')
