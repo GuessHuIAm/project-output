@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte';
 	import * as d3 from 'd3';
 
-
     let data = [];
     let routes = {
         777: ['1636\'er', '0099FF'],
@@ -39,7 +38,7 @@
 
     let stops = null;
     let shapes = null;
- 
+
     let tripsMap = null;
     let stopTimesMap = null;
     let vehiclePositions = null;
@@ -199,8 +198,6 @@
         return vehiclePositions;
     }
     
-
-
 	onMount(() => {
         load_data();
 	});
@@ -218,7 +215,6 @@
     }
 
     function redraw() {
-
         // determine width & height of parent element and subtract the margin
         let width = 800;
         let height = 1000;
@@ -228,7 +224,7 @@
         let yScale = d3.scaleLinear().domain([0, 10]);
 		xScale.range([0, width]);
 		yScale.range([height, 0]);
-        
+
         // create svg and create a group inside that is moved by means of margin
 		const svg = d3.select(el)
 			.append('svg')
@@ -238,6 +234,7 @@
 			.attr('transform', `translate(${[margin.left, margin.top]})`)
 
         let y = 20;
+
         svg.append("text")
             .attr("x", 10)
             .attr("y", 10)
@@ -246,18 +243,14 @@
             .style("font-weight", "bold")
             .text("Active Routes");
 
-        d3.xml("subway.svg")
-            .then(data => {
-                svg.node().append(data.documentElement)
-        });
-
-        
-
+        let route_names = new Set();
         active_trip_ids.forEach(trip_id => {
             const shapeId = tripsMap.get(trip_id).shape_id;
             const routeData = routes[active_shape_to_route.get(shapeId)];
             const routeColor = "#" + routeData[1];
             const routeName = routeData[0];
+            if (route_names.has(routeName)) return;
+            route_names.add(routeName);
 
             const circle = svg.append("g")
                 .attr("transform", `translate(20, ${y + 20})`);
@@ -277,7 +270,34 @@
 
         });
 
+        d3.xml("subway.svg")
+        .then(data => {
+            svg.node().append(data.documentElement);
 
+            // Convert active_trip_ids to a set of active route names for easier checking
+            const activeRouteNames = new Set(Array.from(active_trip_ids).map(trip_id => {
+                const shapeId = tripsMap.get(trip_id).shape_id;
+                const routeData = routes[active_shape_to_route.get(shapeId)];
+                return routeData[0].replace(/[\s']/g, '_'); // Replace spaces with underscores
+            }));
+
+            // Select the node with the id "routes"
+            const routesNode = svg.select('#Routes');
+
+            // Select direct children of the svg
+            routesNode.selectAll('g').filter(function() {
+                return this.parentNode === routesNode.node();
+            }).each(function() {
+                const routeG = d3.select(this);
+                const routeId = routeG.attr('id');
+                console.log(routeId); // Debugging: Log out each routeId being processed
+                if (activeRouteNames.has(routeId)) {
+                    routeG.style('display', ''); // Active, make sure it's visible
+                } else {
+                    routeG.style('display', 'none'); // Inactive, hide it
+                }
+            });
+        });
     }
 </script>
 
