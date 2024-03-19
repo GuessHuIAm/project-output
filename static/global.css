@@ -1,0 +1,37 @@
+:root {
+    font-family:'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif
+}
+
+body {
+    overflow-y: hidden;
+    margin: 0;
+}
+
+.stop:hover {
+    cursor: pointer;
+    box-shadow: #3b2525 0 0 5px;
+}
+
+.route {
+    transition: all 0.3s;
+}
+
+.route:hover {
+    cursor: pointer;
+    opacity: 0.6;
+}
+
+.route-panel {
+    padding: 10px;
+    border-radius: 10px;
+    margin: 5px 0;
+}
+
+.route-panel:hover {
+    cursor: pointer;
+}
+
+.tooltip {
+    pointer-events: none;
+    opacity: 0.9;
+}

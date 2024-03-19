@@ -139,7 +139,7 @@ async function prepare_data() {
 
 let active_shape_to_route, active_trip_ids;
 async function draw_buses() {
-    const response = await fetch("https://passio3.com/harvard/passioTransit/gtfs/realtime/vehiclePositions.json");
+    const response = await fetch("https://passio3.com/harvard/passioTransit/gtfs/realtime/vehicle_positions.json");
     const buses = await response.json();
 
     active_trip_ids = new Set();
