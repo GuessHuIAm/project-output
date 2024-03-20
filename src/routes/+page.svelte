@@ -343,8 +343,8 @@
     }
 
     function update_svg() {
-        let width = 1500;
-        let height = 1500;
+        let width = window.innerHeight;
+        let height = width;
 
         let xScale = d3.scaleLinear().domain([0, 10]).range([0, width]);
         let yScale = d3.scaleLinear().domain([0, 10]).range([height, 0]);
@@ -423,7 +423,7 @@
                                 tooltip.style("visibility", "hidden");
                             });
                     } else {
-                        routeG.style("display", "none");
+                        routeG.style("display", "").attr("opacity", "0.2");
                     }
                 });
 
