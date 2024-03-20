@@ -280,11 +280,14 @@
             if (route_names.has(routeName)) return;
             route_names.add(routeName);
             const color = routeData[1];
+
             const div = document.createElement("div");
             div.id = encode_name(routeName) + "-panel";
             div.classList.add("route-panel");
             div.style.border = `5px solid #${color}`;
             div.innerText = routeName;
+            div.appendChild(document.createElement("label"));
+
             const toggle_container = document.createElement("div");
             toggle_container.classList.add("toggle-container");
             vehicle_positions.forEach((vehicle) => {
@@ -306,6 +309,7 @@
                     toggle_container.appendChild(p);
                 }
             });
+            
             div.appendChild(toggle_container);
             div.onmouseover = function () {
                 routes_node
@@ -327,10 +331,14 @@
 
     function toggle_panel(route_panel) {
         const toggle_container = route_panel.querySelector(".toggle-container");
+        const toggle_label = route_panel.querySelector("label");
         if (toggle_container.style.display === "none") {
             toggle_container.style.display = "block";
+            toggle_label.textContent = " (Hide)";
         } else {
             toggle_container.style.display = "none";
+            const num_vehicles = toggle_container.children.length;
+            toggle_label.textContent = " (Show " + num_vehicles + " shuttle" + (num_vehicles > 1 ? "s" : "") + ")";
         }
     }
 
