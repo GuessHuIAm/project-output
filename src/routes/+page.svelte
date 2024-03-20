@@ -423,7 +423,7 @@
                                 tooltip.style("visibility", "hidden");
                             });
                     } else {
-                        routeG.style("display", "").attr("opacity", "0.2");
+                        routeG.style("display", "").attr("opacity", "0.2").style("stroke", "#000000");
                     }
                 });
 
