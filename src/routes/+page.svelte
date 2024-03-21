@@ -400,12 +400,12 @@
                 .filter(function () {
                     return this.parentNode === routes_node.node();
                 })
-                .classed("route", true)
                 .each(function () {
                     const routeG = d3.select(this);
                     const routeId = routeG.attr("id");
                     if (activeRouteNames.has(nameMap.get(routeId))) {
                         routeG.style("display", "");
+                        routeG.classed("route", true);
                         routeG
                             .on("mouseover", function (event) {
                                 tooltip
@@ -424,6 +424,7 @@
                             });
                     } else {
                         routeG.style("display", "").attr("opacity", "0.2").style("stroke", "#000000");
+
                     }
                 });
 
