@@ -314,6 +314,13 @@
                         console.log(segment.node());
                         segment.style("stroke", `#${color}`);
                     };
+                    p.onmouseout = function () {
+                        const segment = get_route_segment(
+                            routeName,
+                            vehicle.prevStopId,
+                        );
+                        segment.style("stroke", null);
+                    };
                     toggle_container.appendChild(p);
                 }
             });
@@ -354,7 +361,7 @@
         let svg = d3.select(svgMap).select("svg");
         let route = svg.select(`#${encode_name(route_name)}`);
 
-        let route_segments = route.selectAll("polyline");
+        let route_segments = route.selectAll("polyline, line");
 
         // Grab the polyline or line whose id starts with encode_name(start_stop_id)
         let segment = route_segments.filter(function () {
