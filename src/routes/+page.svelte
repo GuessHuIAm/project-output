@@ -306,6 +306,14 @@
                     p.innerText = `${prevStopName} -> ${currentStopName} (${Math.round(
                         percentage * 100,
                     )}%)`;
+                    p.onmouseover = function () {
+                        const segment = get_route_segment(
+                            routeName,
+                            vehicle.prevStopId,
+                        );
+                        console.log(segment.node());
+                        segment.style("stroke", `#${color}`);
+                    };
                     toggle_container.appendChild(p);
                 }
             });
@@ -340,6 +348,20 @@
             const num_vehicles = toggle_container.children.length;
             toggle_label.textContent = " (Show " + num_vehicles + " shuttle" + (num_vehicles > 1 ? "s" : "") + ")";
         }
+    }
+
+    function get_route_segment(route_name, start_stop_id) {
+        let svg = d3.select(svgMap).select("svg");
+        let route = svg.select(`#${encode_name(route_name)}`);
+
+        let route_segments = route.selectAll("polyline");
+
+        // Grab the polyline or line whose id starts with encode_name(start_stop_id)
+        let segment = route_segments.filter(function () {
+            return this.id.startsWith(encode_name(start_stop_id));
+        });
+
+        return segment;
     }
 
     function add_arrows() {
