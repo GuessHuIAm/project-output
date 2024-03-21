@@ -342,6 +342,25 @@
         }
     }
 
+    function add_arrows() {
+        let svg = d3.select(svgMap).select("svg");
+        let defs = svg.append("defs");
+
+        defs.append("marker")
+            .attr("id", "arrowhead")
+            .attr("markerWidth", "3")
+            .attr("markerHeight", "2")
+            .attr("refX", "0")
+            .attr("refY", "1")
+            .attr("orient", "auto")
+            .append("polygon")
+                .attr("points", "0 0, 3 1, 0 2")
+                .attr("fill", "black");
+
+        svg.selectAll("polyline")
+            .attr("marker-mid", "url(#arrowhead)");
+    }
+
     function update_svg() {
         let width = window.innerHeight;
         let height = width;
@@ -447,6 +466,8 @@
                 .on("mouseout", function () {
                     tooltip.style("visibility", "hidden");
                 });
+
+            add_arrows();
         });
     }
 </script>
