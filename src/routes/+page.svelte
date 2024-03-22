@@ -207,6 +207,8 @@
                 const percentage = timeSincePrevStop / totalTravelTime;
 
                 vehicle_positions.push({
+                    x: 0,
+                    y: 0,
                     tripId: tripUpdate.trip.trip_id,
                     prevStopId: prevStop.stop_id,
                     currentStopId: currentStop.stop_id,
@@ -215,7 +217,102 @@
             }
         }
 
+        for (const vehicle of vehicle_positions) {
+            const trip_id = vehicle.tripId;
+            const shapeId = tripsMap.get(trip_id).shape_id;
+            const routeData = routes[active_shape_to_route.get(shapeId)];
+            const routeName = routeData[0];
+
+            const segment = get_route_segment(
+                            routeName,
+                            vehicle.prevStopId,
+            );
+
+            const seg = segment.node();
+            if (!seg) continue;
+            const isPolyline = seg.tagName.toLowerCase() === 'polyline';
+
+            let polylinePointsArray;
+
+            if (isPolyline) {
+                const polylinePoints = d3.select(seg).attr("points");
+                const coordinatePairs = polylinePoints.split(/\s+/);
+                polylinePointsArray = coordinatePairs.flatMap(pair => pair.split(",").map(parseFloat));
+                const busPosition = getPointAtPercentage(
+                    polylinePointsArray,
+                    vehicle.percentage,
+                );
+                vehicle.x = busPosition.x;
+                vehicle.y = busPosition.y;
+            } else {
+                // Segment is a line
+                const x1 = parseFloat(d3.select(seg).attr("x1"));
+                const y1 = parseFloat(d3.select(seg).attr("y1"));
+                const x2 = parseFloat(d3.select(seg).attr("x2"));
+                const y2 = parseFloat(d3.select(seg).attr("y2"));
+                polylinePointsArray = [x1, y1, x2, y2];
+                const busPosition = getBusPositionFromLine(
+                polylinePointsArray,
+                vehicle.percentage,
+                );
+                vehicle.x = busPosition.x;
+                vehicle.y = busPosition.y;
+            }
+
+            console.log (polylinePointsArray);
+        }
+
         return vehicle_positions;
+    }
+
+    function getPointAtPercentage(polyline, percentage) {
+        // Helper function to get the distance between two points
+        const getDistance = (pointA, pointB) => {
+            return Math.sqrt(Math.pow(pointB.x - pointA.x, 2) + Math.pow(pointB.y - pointA.y, 2));
+        };
+
+        // Calculate the total length of the polyline
+        let totalLength = 0;
+        for (let i = 0; i < polyline.length - 1; i++) {
+            totalLength += getDistance(polyline[i], polyline[i + 1]);
+        }
+
+        // Target length is the percentage of the total length
+        let targetLength = totalLength * (percentage / 100);
+
+        // Find the point at the target length
+        let accumulatedLength = 0;
+        for (let i = 0; i < polyline.length - 1; i++) {
+            const segmentLength = getDistance(polyline[i], polyline[i + 1]);
+            if (accumulatedLength + segmentLength >= targetLength) {
+            // Found the segment that contains the point
+            const remainingLength = targetLength - accumulatedLength;
+            const ratio = remainingLength / segmentLength;
+
+            // Calculate the point's coordinates on the segment
+            const point = {
+            x: polyline[i].x + ratio * (polyline[i + 1].x - polyline[i].x),
+            y: polyline[i].y + ratio * (polyline[i + 1].y - polyline[i].y)
+            };
+
+            return point;
+            }
+            accumulatedLength += segmentLength;
+        }
+
+        // If the polyline is degenerate or the percentage is out of bounds, handle accordingly
+        // For this example, return the last point if percentage is >= 100
+        return polyline[polyline.length - 1];
+        }
+
+    function getBusPositionFromLine(polylinePoints, percentage) {
+        const dx = polylinePoints[2] - polylinePoints[0];
+        const dy = polylinePoints[3] - polylinePoints[1];
+
+        const newX = polylinePoints[0] - dx * percentage;
+        const newY = polylinePoints[1] - dy * percentage;
+
+        return { x: newX, y: newY };
     }
 
     onMount(() => {
@@ -230,9 +327,10 @@
         tripsMap = result[3]; // trips map (trip_id -> { shape_id, route_id })
         stopTimesMap = result[4]; // stop times map (trip_id -> [[stop_id, stop_sequence, arrival_time, departure_time], ...])
         await update_buses();
+        update_svg();
         vehicle_positions = await get_vehicle_positions();
         console.log(vehicle_positions);
-        update_svg();
+        //draw_buses();
         update_side_panel();
     }
 
@@ -344,6 +442,64 @@
         });
     }
 
+    async function update_arrivals(stop) {
+        // const arrivals = stopTimesMap.get(stop.stop_id);
+        const panel = document.getElementById("arrivals-panel");
+        panel.innerHTML = stop.stop_name;
+
+        const response2 = await fetch(
+            "https://passio3.com/harvard/passioTransit/gtfs/realtime/tripUpdates.json",
+        );
+        let apiResponse = await response2.json();
+
+        const times = [];
+
+        for (const entity of apiResponse.entity) {
+            // search for all entities that have this stop
+            const trip_id = entity.trip_update.trip.trip_id;
+            const stopTimes = entity.trip_update.stop_time_update;
+            const stopInfo = stopTimes.find((stopTime) => stopTime.stop_id === stop.stop_id);
+            if (stopInfo) {
+                times.push([stopInfo, trip_id]);
+            }
+        }
+
+        times.sort((a, b) => a[0].arrival.time - b[0].arrival.time);
+
+        times.forEach((time) => {
+            // Get the current time in seconds
+            var currentTimeInSeconds = Math.floor(Date.now() / 1000);
+
+            // Calculate the time difference in seconds
+            var timeDifferenceInSeconds = time[0].arrival.time - currentTimeInSeconds;
+
+            if (timeDifferenceInSeconds < 0) {
+                return;
+            }
+            const trip_id = time[1];
+            const routeData = routes[tripsMap.get(trip_id).route_id];
+            const routeName = routeData[0];
+            const color = routeData[1];
+            const div = document.createElement("div");
+            div.classList.add("route-panel");
+            div.style.border = `5px solid #${color}`;
+            div.innerText = routeName;
+            // add arrival time in terms of minutes from now 
+
+            // Convert seconds to minutes
+            var minutesUntilArrival = Math.floor(timeDifferenceInSeconds / 60);
+
+            const p = document.createElement("p");
+            p.innerText = `${minutesUntilArrival} minutes`;
+            div.appendChild(p);
+            // div.innerText += ` - ${minutesUntilArrival} minutes`;
+            panel.appendChild(div);
+        });
+
+        console.log(times);
+        
+    }
+
     function toggle_panel(route_panel) {
         const toggle_container = route_panel.querySelector(".toggle-container");
         const toggle_label = route_panel.querySelector("label");
@@ -388,6 +544,27 @@
 
         svg.selectAll("polyline")
             .attr("marker-mid", "url(#arrowhead)");
+    }
+
+    function draw_buses() {
+        let svg = d3.select(svgMap).select("svg");
+        let g = svg.append("g");
+
+        vehicle_positions.forEach((vehicle) => {
+            if (vehicle.x === 0 || vehicle.y === 0) return;
+            const trip_id = vehicle.tripId;
+            const shapeId = tripsMap.get(trip_id).shape_id;
+            const routeData = routes[active_shape_to_route.get(shapeId)];
+            const routeName = routeData[0];
+            const color = routeData[1];
+            g.append("rect")
+                .attr("x", vehicle.x)
+                .attr("y", vehicle.y)
+                .attr("width", 10)
+                .attr("height", 20)
+                .attr("fill", "#" + color)
+                .attr("stroke", "black");
+        });
     }
 
     function update_svg() {
@@ -495,9 +672,14 @@
                 })
                 .on("mouseout", function () {
                     tooltip.style("visibility", "hidden");
+                })
+                .on("click", function () {
+                    update_arrivals(stopsMap.get(d3.select(this).attr("id")));
                 });
 
-            add_arrows();
+            // add_arrows();
+
+        //    draw_buses();
         });
     }
 </script>
@@ -508,6 +690,10 @@
         <div id="panel-info" bind:this={panelInfo}></div>
     </div>
     <div id="vis" bind:this={svgMap}></div>
+    <div id="side-panel">
+        <h1>Arrivals</h1>
+        <div id="arrivals-panel"></div>
+    </div>
 </main>
 
 <style>
@@ -528,8 +714,16 @@
         align-items: center;
     }
 
-    #panel-info {
+    #panel-info, #arrivals-panel {
         width: 90%;
+    }
+
+    .route-panel {
+        margin: 10px;
+        padding: 10px;
+        border-radius: 10px;
+        background-color: white;
+        cursor: pointer;
     }
 
     #vis {
