@@ -466,6 +466,8 @@
 
         times.sort((a, b) => a[0].arrival.time - b[0].arrival.time);
 
+        let count = 0;
+
         times.forEach((time) => {
             // Get the current time in seconds
             var currentTimeInSeconds = Math.floor(Date.now() / 1000);
@@ -475,7 +477,9 @@
 
             if (timeDifferenceInSeconds < 0) {
                 return;
+
             }
+            count++;
             const trip_id = time[1];
             const routeData = routes[tripsMap.get(trip_id).route_id];
             const routeName = routeData[0];
@@ -495,6 +499,13 @@
             // div.innerText += ` - ${minutesUntilArrival} minutes`;
             panel.appendChild(div);
         });
+
+        if (count === 0) {
+            const div = document.createElement("div");
+            div.classList.add("route-panel");
+            div.innerText = "No upcoming arrivals";
+            panel.appendChild(div);
+        }
 
         console.log(times);
         
