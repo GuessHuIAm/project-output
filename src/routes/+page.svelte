@@ -477,7 +477,6 @@
 
             if (timeDifferenceInSeconds < 0) {
                 return;
-
             }
             count++;
             const trip_id = time[1];
@@ -508,7 +507,6 @@
         }
 
         console.log(times);
-        
     }
 
     function toggle_panel(route_panel) {
@@ -521,6 +519,15 @@
             toggle_container.style.display = "none";
             const num_vehicles = toggle_container.children.length;
             toggle_label.textContent = " (Show " + num_vehicles + " shuttle" + (num_vehicles > 1 ? "s" : "") + ")";
+        }
+    }
+
+    let show_inactive_routes = true;
+    function toggle_inactive_routes() {
+        if (show_inactive_routes) {
+            d3.selectAll(".inactive-route").style("display", "");
+        } else {
+            d3.selectAll(".inactive-route").style("display", "none");
         }
     }
 
@@ -639,28 +646,29 @@
                 .each(function () {
                     const routeG = d3.select(this);
                     const routeId = routeG.attr("id");
+                    routeG
+                        .on("mouseover", function (event) {
+                            tooltip
+                                .style("visibility", "visible")
+                                .text(
+                                    nameMap.get(d3.select(this).attr("id")) + " (Route)",
+                                );
+                        })
+                        .on("mousemove", function (event) {
+                            tooltip
+                                .style("top", event.pageY - 10 + "px")
+                                .style("left", event.pageX + 10 + "px");
+                        })
+                        .on("mouseout", function () {
+                            tooltip.style("visibility", "hidden");
+                        });
                     if (activeRouteNames.has(nameMap.get(routeId))) {
                         routeG.style("display", "");
                         routeG.classed("route", true);
-                        routeG
-                            .on("mouseover", function (event) {
-                                tooltip
-                                    .style("visibility", "visible")
-                                    .text(
-                                        nameMap.get(d3.select(this).attr("id")) + " (Route)",
-                                    );
-                            })
-                            .on("mousemove", function (event) {
-                                tooltip
-                                    .style("top", event.pageY - 10 + "px")
-                                    .style("left", event.pageX + 10 + "px");
-                            })
-                            .on("mouseout", function () {
-                                tooltip.style("visibility", "hidden");
-                            });
                     } else {
+                        routeG.classed("inactive-route", true);
+                        routeG.classed("route", true);
                         routeG.style("display", "").attr("opacity", "0.2").style("stroke", "#000000");
-
                     }
                 });
 
@@ -698,12 +706,19 @@
 <main>
     <div id="side-panel">
         <h1>PassioWay</h1>
+        Show Inactive Routes
+        <div class="toggle-switch">
+            <input type="checkbox" id="toggle-buses" name="toggle-buses" class="toggle-checkbox" bind:checked={show_inactive_routes} on:change={toggle_inactive_routes}>
+            <label class="toggle-label" for="toggle-buses"></label>
+        </div>
         <div id="panel-info" bind:this={panelInfo}></div>
     </div>
     <div id="vis" bind:this={svgMap}></div>
     <div id="side-panel">
         <h1>Arrivals</h1>
-        <div id="arrivals-panel"></div>
+        <div id="arrivals-panel">
+            Click on a stop to view upcoming arrivals.
+        </div>
     </div>
 </main>
 
@@ -727,14 +742,6 @@
 
     #panel-info, #arrivals-panel {
         width: 90%;
-    }
-
-    .route-panel {
-        margin: 10px;
-        padding: 10px;
-        border-radius: 10px;
-        background-color: white;
-        cursor: pointer;
     }
 
     #vis {
