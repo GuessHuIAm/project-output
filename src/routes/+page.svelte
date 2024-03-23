@@ -223,21 +223,20 @@
             const routeData = routes[active_shape_to_route.get(shapeId)];
             const routeName = routeData[0];
 
-            const segment = get_route_segment(
-                            routeName,
-                            vehicle.prevStopId,
-            );
+            const segment = get_route_segment(routeName, vehicle.prevStopId);
 
             const seg = segment.node();
             if (!seg) continue;
-            const isPolyline = seg.tagName.toLowerCase() === 'polyline';
+            const isPolyline = seg.tagName.toLowerCase() === "polyline";
 
             let polylinePointsArray;
 
             if (isPolyline) {
                 const polylinePoints = d3.select(seg).attr("points");
                 const coordinatePairs = polylinePoints.split(/\s+/);
-                polylinePointsArray = coordinatePairs.flatMap(pair => pair.split(",").map(parseFloat));
+                polylinePointsArray = coordinatePairs.flatMap((pair) =>
+                    pair.split(",").map(parseFloat),
+                );
                 const busPosition = getPointAtPercentage(
                     polylinePointsArray,
                     vehicle.percentage,
@@ -252,14 +251,12 @@
                 const y2 = parseFloat(d3.select(seg).attr("y2"));
                 polylinePointsArray = [x1, y1, x2, y2];
                 const busPosition = getBusPositionFromLine(
-                polylinePointsArray,
-                vehicle.percentage,
+                    polylinePointsArray,
+                    vehicle.percentage,
                 );
                 vehicle.x = busPosition.x;
                 vehicle.y = busPosition.y;
             }
-
-            console.log (polylinePointsArray);
         }
 
         return vehicle_positions;
@@ -268,7 +265,10 @@
     function getPointAtPercentage(polyline, percentage) {
         // Helper function to get the distance between two points
         const getDistance = (pointA, pointB) => {
-            return Math.sqrt(Math.pow(pointB.x - pointA.x, 2) + Math.pow(pointB.y - pointA.y, 2));
+            return Math.sqrt(
+                Math.pow(pointB.x - pointA.x, 2) +
+                    Math.pow(pointB.y - pointA.y, 2),
+            );
         };
 
         // Calculate the total length of the polyline
@@ -285,17 +285,21 @@
         for (let i = 0; i < polyline.length - 1; i++) {
             const segmentLength = getDistance(polyline[i], polyline[i + 1]);
             if (accumulatedLength + segmentLength >= targetLength) {
-            // Found the segment that contains the point
-            const remainingLength = targetLength - accumulatedLength;
-            const ratio = remainingLength / segmentLength;
+                // Found the segment that contains the point
+                const remainingLength = targetLength - accumulatedLength;
+                const ratio = remainingLength / segmentLength;
 
-            // Calculate the point's coordinates on the segment
-            const point = {
-            x: polyline[i].x + ratio * (polyline[i + 1].x - polyline[i].x),
-            y: polyline[i].y + ratio * (polyline[i + 1].y - polyline[i].y)
-            };
+                // Calculate the point's coordinates on the segment
+                const point = {
+                    x:
+                        polyline[i].x +
+                        ratio * (polyline[i + 1].x - polyline[i].x),
+                    y:
+                        polyline[i].y +
+                        ratio * (polyline[i + 1].y - polyline[i].y),
+                };
 
-            return point;
+                return point;
             }
             accumulatedLength += segmentLength;
         }
@@ -303,7 +307,7 @@
         // If the polyline is degenerate or the percentage is out of bounds, handle accordingly
         // For this example, return the last point if percentage is >= 100
         return polyline[polyline.length - 1];
-        }
+    }
 
     function getBusPositionFromLine(polylinePoints, percentage) {
         const dx = polylinePoints[2] - polylinePoints[0];
@@ -397,8 +401,12 @@
                     const currentStop = stopTimes.find(
                         (stop) => stop.stop_id === vehicle.currentStopId,
                     );
-                    const prevStopName = stopsMap.get(vehicle.prevStopId).stop_name;
-                    const currentStopName = stopsMap.get(vehicle.currentStopId).stop_name;
+                    const prevStopName = stopsMap.get(
+                        vehicle.prevStopId,
+                    ).stop_name;
+                    const currentStopName = stopsMap.get(
+                        vehicle.currentStopId,
+                    ).stop_name;
                     const percentage = vehicle.percentage;
                     const p = document.createElement("p");
                     p.innerText = `${prevStopName} -> ${currentStopName} (${Math.round(
@@ -422,18 +430,23 @@
                     toggle_container.appendChild(p);
                 }
             });
-            
+
             div.appendChild(toggle_container);
             div.onmouseover = function () {
                 routes_node
-                    .select(`#${encode_name(routeName)}`)
+                    .select('.active-route')
+                    .filter(function () {
+                        return this.id !== encode_name(routeName);
+                    })
                     .style("opacity", "0.5");
             };
             div.onmouseout = function () {
                 routes_node
-                    .select(`#${encode_name(routeName)}`)
-                    .style("opacity", null);
-                    
+                    .selectAll(".active-route")
+                    .filter(function () {
+                        return this.id !== encode_name(routeName);
+                    })
+                    .style("opacity", "");
             };
             div.onclick = function () {
                 toggle_panel(this);
@@ -458,7 +471,9 @@
             // search for all entities that have this stop
             const trip_id = entity.trip_update.trip.trip_id;
             const stopTimes = entity.trip_update.stop_time_update;
-            const stopInfo = stopTimes.find((stopTime) => stopTime.stop_id === stop.stop_id);
+            const stopInfo = stopTimes.find(
+                (stopTime) => stopTime.stop_id === stop.stop_id,
+            );
             if (stopInfo) {
                 times.push([stopInfo, trip_id]);
             }
@@ -473,7 +488,8 @@
             var currentTimeInSeconds = Math.floor(Date.now() / 1000);
 
             // Calculate the time difference in seconds
-            var timeDifferenceInSeconds = time[0].arrival.time - currentTimeInSeconds;
+            var timeDifferenceInSeconds =
+                time[0].arrival.time - currentTimeInSeconds;
 
             if (timeDifferenceInSeconds < 0) {
                 return;
@@ -487,7 +503,7 @@
             div.classList.add("route-panel");
             div.style.border = `5px solid #${color}`;
             div.innerText = routeName;
-            // add arrival time in terms of minutes from now 
+            // add arrival time in terms of minutes from now
 
             // Convert seconds to minutes
             var minutesUntilArrival = Math.floor(timeDifferenceInSeconds / 60);
@@ -510,15 +526,15 @@
     }
 
     function toggle_panel(route_panel) {
-        const toggle_container = route_panel.querySelector(".toggle-container");
-        const toggle_label = route_panel.querySelector("label");
-        if (toggle_container.style.display === "none") {
-            toggle_container.style.display = "block";
-            toggle_label.textContent = " (Hide)";
+        // If it's clicked, add the clicked class
+        if (route_panel.classList.contains("clicked")) {
+            route_panel.classList.remove("clicked");
+            // Change the background color to white
+            route_panel.style.backgroundColor = "white";
         } else {
-            toggle_container.style.display = "none";
-            const num_vehicles = toggle_container.children.length;
-            toggle_label.textContent = " (Show " + num_vehicles + " shuttle" + (num_vehicles > 1 ? "s" : "") + ")";
+            route_panel.classList.add("clicked");
+            // Change the background color to the border color
+            route_panel.style.backgroundColor = route_panel.style.borderColor;
         }
     }
 
@@ -543,25 +559,6 @@
         });
 
         return segment;
-    }
-
-    function add_arrows() {
-        let svg = d3.select(svgMap).select("svg");
-        let defs = svg.append("defs");
-
-        defs.append("marker")
-            .attr("id", "arrowhead")
-            .attr("markerWidth", "3")
-            .attr("markerHeight", "2")
-            .attr("refX", "0")
-            .attr("refY", "1")
-            .attr("orient", "auto")
-            .append("polygon")
-                .attr("points", "0 0, 3 1, 0 2")
-                .attr("fill", "black");
-
-        svg.selectAll("polyline")
-            .attr("marker-mid", "url(#arrowhead)");
     }
 
     function draw_buses() {
@@ -646,29 +643,63 @@
                 .each(function () {
                     const routeG = d3.select(this);
                     const routeId = routeG.attr("id");
-                    routeG
-                        .on("mouseover", function (event) {
-                            tooltip
-                                .style("visibility", "visible")
-                                .text(
-                                    nameMap.get(d3.select(this).attr("id")) + " (Route)",
-                                );
-                        })
-                        .on("mousemove", function (event) {
-                            tooltip
-                                .style("top", event.pageY - 10 + "px")
-                                .style("left", event.pageX + 10 + "px");
-                        })
-                        .on("mouseout", function () {
-                            tooltip.style("visibility", "hidden");
-                        });
-                    if (activeRouteNames.has(nameMap.get(routeId))) {
-                        routeG.style("display", "");
-                        routeG.classed("route", true);
+
+                    // Determine if the current route is active
+                    const isActiveRoute = activeRouteNames.has(
+                        nameMap.get(routeId),
+                    );
+
+                    // Common mouseover behavior
+                    routeG.on("mouseover", function (event) {
+                        if (isActiveRoute) {
+                            // Lower the opacity of other active routes
+                            d3.selectAll(".active-route")
+                                .filter(function () {
+                                    return this !== routeG.node();
+                                })
+                                .style("opacity", "0.5");
+                        } else {
+                            // Highlight inactive routes
+                            d3.selectAll(".inactive-route").style("opacity", "");
+                            routeG.style("opacity", "0.5");
+                        }
+
+                        // Show tooltip for all routes
+                        tooltip
+                            .style("visibility", "visible")
+                            .text(nameMap.get(routeId) + " (Route)");
+                    });
+
+                    // Common mousemove behavior
+                    routeG.on("mousemove", function (event) {
+                        tooltip
+                            .style("top", event.pageY - 10 + "px")
+                            .style("left", event.pageX + 10 + "px");
+                    });
+
+                    // Common mouseout behavior
+                    routeG.on("mouseout", function () {
+                        tooltip.style("visibility", "hidden");
+
+                        // Reset the opacity for active routes
+                        if (isActiveRoute) {
+                            d3.selectAll(".active-route").style("opacity", "");
+                        } else {
+                            d3.selectAll(".inactive-route").style("opacity", "");
+                        }
+                    });
+
+                    // Additional styling based on active or inactive status
+                    if (isActiveRoute) {
+                        routeG
+                            .style("display", "")
+                            .classed("route active-route", true);
                     } else {
-                        routeG.classed("inactive-route", true);
-                        routeG.classed("route", true);
-                        routeG.style("display", "").attr("opacity", "0.2").style("stroke", "#000000");
+                        routeG
+                            .classed("inactive-route route", true)
+                            .style("display", "")
+                            .attr("opacity", "0.2")
+                            .style("stroke", "#000000");
                     }
                 });
 
@@ -681,7 +712,9 @@
                 .on("mouseover", function (event) {
                     tooltip
                         .style("visibility", "visible")
-                        .text(stopsMap.get(d3.select(this).attr("id")).stop_name + " (Stop)",
+                        .text(
+                            stopsMap.get(d3.select(this).attr("id")).stop_name +
+                                " (Stop)",
                         );
                 })
                 .on("mousemove", function (event) {
@@ -696,9 +729,7 @@
                     update_arrivals(stopsMap.get(d3.select(this).attr("id")));
                 });
 
-            // add_arrows();
-
-        //    draw_buses();
+            //    draw_buses();
         });
     }
 </script>
@@ -708,7 +739,14 @@
         <h1>PassioWay</h1>
         Show Inactive Routes
         <div class="toggle-switch">
-            <input type="checkbox" id="toggle-buses" name="toggle-buses" class="toggle-checkbox" bind:checked={show_inactive_routes} on:change={toggle_inactive_routes}>
+            <input
+                type="checkbox"
+                id="toggle-buses"
+                name="toggle-buses"
+                class="toggle-checkbox"
+                bind:checked={show_inactive_routes}
+                on:change={toggle_inactive_routes}
+            />
             <label class="toggle-label" for="toggle-buses"></label>
         </div>
         <div id="panel-info" bind:this={panelInfo}></div>
@@ -740,7 +778,8 @@
         align-items: center;
     }
 
-    #panel-info, #arrivals-panel {
+    #panel-info,
+    #arrivals-panel {
         width: 90%;
     }
 
