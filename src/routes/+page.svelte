@@ -207,6 +207,9 @@
                 const totalTravelTime =
                     currentStopArrivalTime - prevStopArrivalTime;
                 const percentage = timeSincePrevStop / totalTravelTime;
+                const minutesTillNextStop = Math.floor(
+                    (currentStopArrivalTime - currentTime) / 60,
+                );
 
                 vehicle_positions.push({
                     x: 0,
@@ -214,6 +217,7 @@
                     tripId: tripUpdate.trip.trip_id,
                     prevStopId: prevStop.stop_id,
                     currentStopId: currentStop.stop_id,
+                    minutesTillNextStop,
                     percentage,
                 });
             }
@@ -405,11 +409,9 @@
                     const currentStopName = stopsMap.get(
                         vehicle.currentStopId,
                     ).stop_name;
-                    const percentage = vehicle.percentage;
+                    const minutesTillNextStop = vehicle.minutesTillNextStop;
                     const p = document.createElement("p");
-                    p.innerText = `${prevStopName} -> ${currentStopName} (${Math.round(
-                        percentage * 100,
-                    )}%)`;
+                    p.innerText = `${prevStopName} -> ${currentStopName} (arriving in ${minutesTillNextStop} minutes)`;
                     p.onmouseover = function () {
                         const segment = get_route_segment(
                             routeName,
@@ -498,7 +500,7 @@
             var minutesUntilArrival = Math.floor(timeDifferenceInSeconds / 60);
 
             const p = document.createElement("p");
-            p.innerText = `${minutesUntilArrival} minutes`;
+            p.innerText = `in ${minutesUntilArrival} - ${minutesUntilArrival + 3} minutes`;
             div.appendChild(p);
             // div.innerText += ` - ${minutesUntilArrival} minutes`;
             panel.appendChild(div);
