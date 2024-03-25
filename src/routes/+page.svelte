@@ -433,20 +433,10 @@
 
             div.appendChild(toggle_container);
             div.onmouseover = function () {
-                routes_node
-                    .select('.active-route')
-                    .filter(function () {
-                        return this.id !== encode_name(routeName);
-                    })
-                    .style("opacity", "0.5");
+                mouseover_route(routeName, true);
             };
             div.onmouseout = function () {
-                routes_node
-                    .selectAll(".active-route")
-                    .filter(function () {
-                        return this.id !== encode_name(routeName);
-                    })
-                    .style("opacity", "");
+                mouseout_route(true);
             };
             div.onclick = function () {
                 toggle_panel(this);
@@ -582,6 +572,33 @@
         });
     }
 
+    function mouseover_route(route_name, is_active_route) {
+        if (is_active_route) {
+            // Lower the opacity of other active routes
+            d3.selectAll(".active-route")
+                .filter(function () {
+                    return this.id !== encode_name(route_name);
+                })
+                .style("opacity", "0.3");
+        } else {
+            // Highlight inactive routes
+            d3.selectAll(".inactive-route").style("opacity", "");
+            d3.selectAll(".inactive-route")
+                .filter(function () {
+                    return this.id === encode_name(route_name);
+                })
+                .style("opacity", "0.5");
+        }
+    }
+
+    function mouseout_route(is_active_route) {
+        if (is_active_route) {
+            d3.selectAll(".active-route").style("opacity", "");
+        } else {
+            d3.selectAll(".inactive-route").style("opacity", "");
+        }
+    }
+
     function update_svg() {
         let width = window.innerHeight;
         let height = width;
@@ -651,20 +668,7 @@
 
                     // Common mouseover behavior
                     routeG.on("mouseover", function (event) {
-                        if (isActiveRoute) {
-                            // Lower the opacity of other active routes
-                            d3.selectAll(".active-route")
-                                .filter(function () {
-                                    return this !== routeG.node();
-                                })
-                                .style("opacity", "0.5");
-                        } else {
-                            // Highlight inactive routes
-                            d3.selectAll(".inactive-route").style("opacity", "");
-                            routeG.style("opacity", "0.5");
-                        }
-
-                        // Show tooltip for all routes
+                        mouseover_route(nameMap.get(routeId), isActiveRoute);
                         tooltip
                             .style("visibility", "visible")
                             .text(nameMap.get(routeId) + " (Route)");
@@ -679,14 +683,8 @@
 
                     // Common mouseout behavior
                     routeG.on("mouseout", function () {
+                        mouseout_route(isActiveRoute);
                         tooltip.style("visibility", "hidden");
-
-                        // Reset the opacity for active routes
-                        if (isActiveRoute) {
-                            d3.selectAll(".active-route").style("opacity", "");
-                        } else {
-                            d3.selectAll(".inactive-route").style("opacity", "");
-                        }
                     });
 
                     // Additional styling based on active or inactive status
