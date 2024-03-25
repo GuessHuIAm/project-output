@@ -48,6 +48,8 @@
     let routes_node = null;
     let stops_node = null;
 
+    let num_routes_clicked = 0;
+
     const margin = {
         top: 0,
         right: 0,
@@ -221,42 +223,47 @@
             const trip_id = vehicle.tripId;
             const shapeId = tripsMap.get(trip_id).shape_id;
             const routeData = routes[active_shape_to_route.get(shapeId)];
+            if (!routeData) {
+                console.log(shapeId + " not found");
+                continue;
+            }
             const routeName = routeData[0];
 
             const segment = get_route_segment(routeName, vehicle.prevStopId);
 
             const seg = segment.node();
             if (!seg) continue;
-            const isPolyline = seg.tagName.toLowerCase() === "polyline";
 
-            let polylinePointsArray;
+            // const isPolyline = seg.tagName.toLowerCase() === "polyline";
 
-            if (isPolyline) {
-                const polylinePoints = d3.select(seg).attr("points");
-                const coordinatePairs = polylinePoints.split(/\s+/);
-                polylinePointsArray = coordinatePairs.flatMap((pair) =>
-                    pair.split(",").map(parseFloat),
-                );
-                const busPosition = getPointAtPercentage(
-                    polylinePointsArray,
-                    vehicle.percentage,
-                );
-                vehicle.x = busPosition.x;
-                vehicle.y = busPosition.y;
-            } else {
-                // Segment is a line
-                const x1 = parseFloat(d3.select(seg).attr("x1"));
-                const y1 = parseFloat(d3.select(seg).attr("y1"));
-                const x2 = parseFloat(d3.select(seg).attr("x2"));
-                const y2 = parseFloat(d3.select(seg).attr("y2"));
-                polylinePointsArray = [x1, y1, x2, y2];
-                const busPosition = getBusPositionFromLine(
-                    polylinePointsArray,
-                    vehicle.percentage,
-                );
-                vehicle.x = busPosition.x;
-                vehicle.y = busPosition.y;
-            }
+            // let polylinePointsArray;
+
+            // if (isPolyline) {
+            //     const polylinePoints = d3.select(seg).attr("points");
+            //     const coordinatePairs = polylinePoints.split(/\s+/);
+            //     polylinePointsArray = coordinatePairs.flatMap((pair) =>
+            //         pair.split(",").map(parseFloat),
+            //     );
+            //     const busPosition = getPointAtPercentage(
+            //         polylinePointsArray,
+            //         vehicle.percentage,
+            //     );
+            //     vehicle.x = busPosition.x;
+            //     vehicle.y = busPosition.y;
+            // } else {
+            //     // Segment is a line
+            //     const x1 = parseFloat(d3.select(seg).attr("x1"));
+            //     const y1 = parseFloat(d3.select(seg).attr("y1"));
+            //     const x2 = parseFloat(d3.select(seg).attr("x2"));
+            //     const y2 = parseFloat(d3.select(seg).attr("y2"));
+            //     polylinePointsArray = [x1, y1, x2, y2];
+            //     const busPosition = getBusPositionFromLine(
+            //         polylinePointsArray,
+            //         vehicle.percentage,
+            //     );
+            //     vehicle.x = busPosition.x;
+            //     vehicle.y = busPosition.y;
+            // }
         }
 
         return vehicle_positions;
@@ -366,15 +373,6 @@
     function update_side_panel() {
         let route_names = new Set();
 
-        d3.select(panelInfo)
-            .append("text")
-            .attr("x", 10)
-            .attr("y", 15)
-            .attr("fill", "black")
-            .style("font-size", "20px")
-            .style("font-weight", "bold")
-            .text("Active Routes");
-
         active_trip_ids.forEach((trip_id) => {
             const shapeId = tripsMap.get(trip_id).shape_id;
             const routeData = routes[active_shape_to_route.get(shapeId)];
@@ -439,8 +437,9 @@
                 mouseout_route(true);
             };
             div.onclick = function () {
-                toggle_panel(this);
+                route_click(this, routeName);
             };
+            div.id = encode_name(routeName) + "-panel";
             panelInfo.appendChild(div);
         });
     }
@@ -515,16 +514,43 @@
         console.log(times);
     }
 
-    function toggle_panel(route_panel) {
+    function route_click(target, route_name) {
         // If it's clicked, add the clicked class
-        if (route_panel.classList.contains("clicked")) {
-            route_panel.classList.remove("clicked");
-            // Change the background color to white
-            route_panel.style.backgroundColor = "white";
+        if (target.classList.contains("clicked")) {
+            num_routes_clicked--;
+
+            d3.select(`#${encode_name(route_name)}-panel`)
+                .classed("clicked", false)
+                .style("background-color", "transparent");
+
+            d3.select(`#${encode_name(route_name)}`)
+                .classed("clicked", false);
+
+            if (num_routes_clicked === 0) {
+                d3.selectAll(".active-route").style("display", "");
+            } else {
+                d3.selectAll(".active-route")
+                    .filter(function () {
+                        return !this.classList.contains("clicked");
+                    })
+                    .style("display", "none");
+            }
         } else {
-            route_panel.classList.add("clicked");
-            // Change the background color to the border color
-            route_panel.style.backgroundColor = route_panel.style.borderColor;
+            num_routes_clicked++;
+            
+            let borderColor = d3.select(`#${encode_name(route_name)}-panel`).node().style.borderColor;
+            d3.select(`#${encode_name(route_name)}-panel`)
+                .classed("clicked", true)
+                .style("background-color", borderColor);
+            
+            d3.select(`#${encode_name(route_name)}`)
+                .classed("clicked", true)
+                .style("display", "");
+            d3.selectAll(".active-route")
+                .filter(function () {
+                    return !this.classList.contains("clicked");
+                })
+                .style("display", "none");
         }
     }
 
@@ -574,12 +600,14 @@
 
     function mouseover_route(route_name, is_active_route) {
         if (is_active_route) {
-            // Lower the opacity of other active routes
-            d3.selectAll(".active-route")
-                .filter(function () {
-                    return this.id !== encode_name(route_name);
-                })
-                .style("opacity", "0.3");
+            if (num_routes_clicked === 0) {
+                // Lower the opacity of other active routes
+                d3.selectAll(".active-route")
+                    .filter(function () {
+                        return this.id !== encode_name(route_name);
+                    })
+                    .style("opacity", "0.3");
+            }
         } else {
             // Highlight inactive routes
             d3.selectAll(".inactive-route").style("opacity", "");
@@ -691,7 +719,10 @@
                     if (isActiveRoute) {
                         routeG
                             .style("display", "")
-                            .classed("route active-route", true);
+                            .classed("route active-route", true)
+                            .on("click", function () {
+                                route_click(this, nameMap.get(routeId));
+                            });
                     } else {
                         routeG
                             .classed("inactive-route route", true)
@@ -733,7 +764,7 @@
 </script>
 
 <main>
-    <div id="side-panel">
+    <div class="side-panel">
         <h1>PassioWay</h1>
         Show Inactive Routes
         <div class="toggle-switch">
@@ -747,10 +778,14 @@
             />
             <label class="toggle-label" for="toggle-buses"></label>
         </div>
-        <div id="panel-info" bind:this={panelInfo}></div>
+        <div id="panel-info" >
+            <h2>Active Routes</h2>
+            Click on a route to isolate it.
+            <div bind:this={panelInfo}></div>
+        </div>
     </div>
     <div id="vis" bind:this={svgMap}></div>
-    <div id="side-panel">
+    <div class="side-panel">
         <h1>Arrivals</h1>
         <div id="arrivals-panel">
             Click on a stop to view upcoming arrivals.
@@ -764,7 +799,7 @@
         height: 100%;
     }
 
-    #side-panel {
+    .side-panel {
         width: 20%;
         margin: 10px;
         max-height: 98vh;
